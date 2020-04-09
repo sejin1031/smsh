@@ -34,6 +34,8 @@ int main(void) {
   char *args2[MAX_LEN / 2 + 1] = {NULL,};
   int should_run = 1;          /* flag to determine when to exit program */
   int background = 0;
+  int history = 0;
+  char historys[1000][1000] = {'\0',};
   char pwd[MAX_LEN];
 
   char *text1 = NULL;
@@ -47,18 +49,27 @@ int main(void) {
       printf("%s$",pwd);
       fflush(stdout);
       char *input = (char*) malloc(MAX_LEN*sizeof(char));
+	  char cmd[1000];
       fgets(input, MAX_LEN,stdin);
 
       if(strcmp(input,"\n") == 0){
         goto start;
       }
       input = strtok(input,"\n"); //"\n" 제거
-
+	  strcpy(historys[history++],input);
       //exit 종료
       if(strcmp(input,"exit") == 0){
         exit(0);
       }
-		if(strstr(input,">>") != NULL){
+
+	  if(strcmp(input,"history") == 0){
+		  int num;
+		  for(num=0; *historys[num] != '\0' ;num++){
+			  printf("%4d %s\n",num+1,historys[num]);
+		  }
+		  goto start;
+	  }
+	  else if(strstr(input,">>") != NULL){
 			printf(">> 실행\n");
 		  text1 = strtok(input,">");
 		  text2 = strtok(NULL,">");
@@ -192,7 +203,7 @@ int main(void) {
 	  }
 
       free(input);
-	  
+
   }
   return 0;
 }
