@@ -1,5 +1,0 @@
-powershell.h
-readdir.c
-smsh
-smsh.c
-test.txt

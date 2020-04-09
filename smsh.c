@@ -58,8 +58,62 @@ int main(void) {
       if(strcmp(input,"exit") == 0){
         exit(0);
       }
+		if(strstr(input,">>") != NULL){
+			printf(">> 실행\n");
+		  text1 = strtok(input,">");
+		  text2 = strtok(NULL,">");
+		  splitcmd(text1, args,background);
+		  splitcmd(text2, args2,background);
 
-	  if(strchr(input,'>') != NULL){
+		  switch (fork()){
+		 	case -1 : perror ("fork"); 
+				break;
+			case 0 :
+				fdr = open(args2[0], O_WRONLY | O_CREAT |O_APPEND, 0644);
+				if(fdr==-1) {
+					perror("파일 새로생성 오류");
+					exit(1);
+				}
+				if( dup2(fdr, 1) == -1){
+					perror("fdr dup error");
+				}
+				close(fdr);
+				execvp(args[0], args);
+				printf("command not found \n");     
+				exit(0);        
+				break;
+			default : wait(NULL);
+			  
+		  }
+	  }else if(strstr(input,">!") != NULL){
+		  text1 = strtok(input,">");
+		  text2 = strtok(NULL,">!");
+		  printf("text1 = %s, text2 = %s \n",text1, text2);
+		  splitcmd(text1, args,background);
+		  splitcmd(text2, args2,background);
+
+		  switch (fork()){
+		 	case -1 : perror ("fork"); 
+				break;
+			case 0 :
+				fdr = open(args2[0], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+				if(fdr==-1) {
+					perror("파일 새로생성 오류");
+					exit(1);
+				}
+				if( dup2(fdr, 1) == -1){
+					perror("fdr dup error");
+				}
+				close(fdr);
+				execvp(args[0], args);
+				printf("command not found \n");     
+				exit(0);        
+				break;
+			default : wait(NULL);
+			  
+		  }
+	  } 
+	  else if(strchr(input,'>') != NULL){
 		  text1 = strtok(input,">");
 		  text2 = strtok(NULL,">");
 		  splitcmd(text1, args,background);
@@ -138,23 +192,7 @@ int main(void) {
 	  }
 
       free(input);
-
-      // for (int i = 0; i < 10; i++)
-      // {
-      //     if (args[i] != NULL)           // 문자열 포인터 배열의 요소가 NULL이 아닐 때만
-      //         printf("%s\n", args[i]);   // 문자열 포인터 배열에 인덱스로 접근하여 각 문자열 출력
-      // }
-
-      
-
-      //printf("%s",input);
-      /**
-       * 표준입출력으로부터 문자열을 입력 받은 후:
-       * (1) fork()를 통해 자식 프로세스를 생성
-       * (2) 자식 프로세스가 execvp()를 호출하도록 할 것
-       * (3) 만약 입력받은 문자에 &가 포함되어 있으면,
-       *     부모 프로세스는 wait() 호출
-       */
+	  
   }
   return 0;
 }
