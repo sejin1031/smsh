@@ -95,7 +95,7 @@ int main(void) {
 		 	case -1 : perror ("fork"); 
 				break;
 			case 0 :
-				fdr = open(args2[0], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+				fdr = open(args2[0], O_RDONLY);
 				close(0);
 				if(fdr==-1) {
 					perror("파일 새로생성 오류");
