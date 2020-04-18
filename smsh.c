@@ -176,6 +176,28 @@ int main(void) {
 			default : wait(NULL);
 		  }
 	  }
+	  else if(strchr(input,'|') != NULL){
+		  text1 = strtok(input,"|");
+		  text2 = strtok(NULL,"|");
+		  splitcmd(text1, args,background);
+		  splitcmd(text2, args2,background);
+
+		  int fd[2];
+		  
+		  pipe(fd);
+
+		  if(fork() == 0){
+			  close(fd[0]);
+			  dup2(fd[1],1);
+			  close(fd[1]);
+			  execvp(args[0],args);
+		  } else{
+			  close(fd[1]);
+			  dup2(fd[0],0);
+			  close(fd[0]);
+			  execvp(args2[0],args2);
+		  }
+	  }
       else{
 		  splitcmd(input,args,background);
       
