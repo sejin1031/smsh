@@ -8,6 +8,48 @@
 
 #define MAX_LEN 100 /* The maximum length command */
 
+
+int join(char *com1[], char *com2[]){
+  int p[2], status;
+
+  switch (fork())
+  {
+  case -1:
+    perror("1st fork error");
+    break;
+  
+  case 0:
+    break;
+    
+  default:
+  wait(&status);
+  return status;
+
+
+  }
+
+  if (pipe(p) == -1)
+    perror("pipe create error");
+  switch (fork())
+  {
+  case -1:
+    perror("fork 2 error");
+  case 0:
+  dup2(p[1],1);
+  close(p[0]);
+  close(p[1]);
+  execvp(com1[0],com1);
+  perror("1st execvp error");
+  
+  default:
+  dup2(p[0],0);
+  close(p[0]);
+  close(p[1]);
+  execvp(com2[0],com2);
+  perror("1st execvp error");
+  }
+}
+
 void splitcmd(char *input, char *args[MAX_LEN / 2 + 1],int background){
 	background = 0;
 	  memset(args,'\0',sizeof(char)*(MAX_LEN / 2 + 1));
@@ -182,21 +224,9 @@ int main(void) {
 		  splitcmd(text1, args,background);
 		  splitcmd(text2, args2,background);
 
-		  int fd[2];
-		  
-		  pipe(fd);
+		  join(args,args2);
 
-		  if(fork() == 0){
-			  close(fd[0]);
-			  dup2(fd[1],1);
-			  close(fd[1]);
-			  execvp(args[0],args);
-		  } else{
-			  close(fd[1]);
-			  dup2(fd[0],0);
-			  close(fd[0]);
-			  execvp(args2[0],args2);
-		  }
+		  
 	  }
       else{
 		  splitcmd(input,args,background);
