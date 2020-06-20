@@ -86,16 +86,15 @@ int main(void) {
   int fdr;
 
   while (should_run) {
-    start:
 	  getcwd(pwd,MAX_LEN);
-      printf("%s$",pwd);
+      printf("%s$ ",pwd);
       fflush(stdout);
       char *input = (char*) malloc(MAX_LEN*sizeof(char));
 	  char cmd[1000];
       fgets(input, MAX_LEN,stdin);
 
       if(strcmp(input,"\n") == 0){
-        goto start;
+        continue;
       }
       input = strtok(input,"\n"); //"\n" 제거
 	  strcpy(historys[history++],input);
@@ -103,15 +102,21 @@ int main(void) {
       if(strcmp(input,"exit") == 0){
         exit(0);
       }
+		if(strstr(input,"!") != NULL){
+			text1 = strtok(input,"!");
+			int num = atoi(text1);
+			strcpy(input,historys[num-1]);
+	}
 
 	  if(strcmp(input,"history") == 0){
 		  int num;
 		  for(num=0; *historys[num] != '\0' ;num++){
 			  printf("%4d %s\n",num+1,historys[num]);
 		  }
-		  goto start;
+		  continue;
 	  }
-	  else if(strstr(input,">>") != NULL){
+	  
+	  if(strstr(input,">>") != NULL){
 			printf(">> 실행\n");
 		  text1 = strtok(input,">");
 		  text2 = strtok(NULL,">");
@@ -138,10 +143,9 @@ int main(void) {
 			default : wait(NULL);
 			  
 		  }
-	  }else if(strstr(input,">!") != NULL){
+	  }else if(strstr(input,">|") != NULL){
 		  text1 = strtok(input,">");
-		  text2 = strtok(NULL,">!");
-		  printf("text1 = %s, text2 = %s \n",text1, text2);
+		  text2 = strtok(NULL,">|");
 		  splitcmd(text1, args,background);
 		  splitcmd(text2, args2,background);
 
@@ -165,10 +169,9 @@ int main(void) {
 			default : wait(NULL);
 			  
 		  }
-	  } 
-	  else if(strchr(input,'>') != NULL){
+	  } else if(strstr(input,"2>") != NULL){
 		  text1 = strtok(input,">");
-		  text2 = strtok(NULL,">");
+		  text2 = strtok(NULL,"2>");
 		  splitcmd(text1, args,background);
 		  splitcmd(text2, args2,background);
 
@@ -181,7 +184,7 @@ int main(void) {
 					perror("파일 새로생성 오류");
 					exit(1);
 				}
-				if( dup2(fdr, 1) == -1){
+				if( dup2(fdr, 2) == -1){
 					perror("fdr dup error");
 				}
 				close(fdr);
@@ -190,6 +193,35 @@ int main(void) {
 				exit(0);        
 				break;
 			default : wait(NULL);
+			  
+		  }
+	  } 
+	  else if(strchr(input,'>') != NULL){
+		  text1 = strtok(input,">");
+		  text2 = strtok(NULL,">");
+		  splitcmd(text1, args,background);
+		  splitcmd(text2, args2,background);
+
+		  switch (fork()){
+		 	case -1 : perror ("fork"); 
+				break;
+			case 0 :
+				fdr = open(args2[0], O_WRONLY | O_CREAT | O_TRUNC | O_EXCL, 0644);
+				if(fdr==-1) {
+					perror("파일 새로생성 오류");
+					exit(1);
+				}
+				if( dup2(fdr, 1) == -1){
+					perror("fdr dup error");
+				}
+				close(fdr);
+				execvp(args[0], args);
+				printf("command not found \n");     
+				exit(0);        
+				break;
+			default : 
+				wait(NULL);
+				continue;
 			  
 		  }
 	  } else if(strchr(input,'<') != NULL){
@@ -235,7 +267,7 @@ int main(void) {
 	  //change directory
 		if(strcmp(args[0],"cd") == 0){
 			chdir(args[1]);
-			goto start;
+			continue;
 		}
 
 		int pid;
