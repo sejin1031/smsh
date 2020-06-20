@@ -8,6 +8,7 @@
 
 #define MAX_LEN 100 /* The maximum length command */
 
+int background = 0;
 
 int join(char *com1[], char *com2[]){
   int p[2], status;
@@ -50,8 +51,7 @@ int join(char *com1[], char *com2[]){
   }
 }
 
-void splitcmd(char *input, char *args[MAX_LEN / 2 + 1],int background){
-	background = 0;
+void splitcmd(char *input, char *args[MAX_LEN / 2 + 1]){
 	  memset(args,'\0',sizeof(char)*(MAX_LEN / 2 + 1));
       int i = 0;
       char *ptr = strtok(input, " ");
@@ -69,13 +69,13 @@ void splitcmd(char *input, char *args[MAX_LEN / 2 + 1],int background){
             ptr = strtok(NULL, " ");
           }
       }
+	  
 }
 
 int main(void) {
   char *args[MAX_LEN / 2 + 1] = {NULL,}; /* command line arguments */
   char *args2[MAX_LEN / 2 + 1] = {NULL,};
   int should_run = 1;          /* flag to determine when to exit program */
-  int background = 0;
   int history = 0;
   char historys[1000][1000] = {'\0',};
   char pwd[MAX_LEN];
@@ -86,6 +86,7 @@ int main(void) {
   int fdr;
 
   while (should_run) {
+	  background = 0;
 	  getcwd(pwd,MAX_LEN);
       printf("%s$ ",pwd);
       fflush(stdout);
@@ -117,11 +118,10 @@ int main(void) {
 	  }
 	  
 	  if(strstr(input,">>") != NULL){
-			printf(">> 실행\n");
 		  text1 = strtok(input,">");
 		  text2 = strtok(NULL,">");
-		  splitcmd(text1, args,background);
-		  splitcmd(text2, args2,background);
+		  splitcmd(text1, args);
+		  splitcmd(text2, args2);
 
 		  switch (fork()){
 		 	case -1 : perror ("fork"); 
@@ -140,14 +140,14 @@ int main(void) {
 				printf("command not found \n");     
 				exit(0);        
 				break;
-			default : wait(NULL);
+			default : if(!background) wait(NULL);
 			  
 		  }
 	  }else if(strstr(input,">|") != NULL){
 		  text1 = strtok(input,">");
 		  text2 = strtok(NULL,">|");
-		  splitcmd(text1, args,background);
-		  splitcmd(text2, args2,background);
+		  splitcmd(text1, args);
+		  splitcmd(text2, args2);
 
 		  switch (fork()){
 		 	case -1 : perror ("fork"); 
@@ -155,7 +155,6 @@ int main(void) {
 			case 0 :
 				fdr = open(args2[0], O_WRONLY | O_CREAT | O_TRUNC, 0644);
 				if(fdr==-1) {
-					perror("파일 새로생성 오류");
 					exit(1);
 				}
 				if( dup2(fdr, 1) == -1){
@@ -166,14 +165,14 @@ int main(void) {
 				printf("command not found \n");     
 				exit(0);        
 				break;
-			default : wait(NULL);
+			default : if(!background) wait(NULL);
 			  
 		  }
 	  } else if(strstr(input,"2>") != NULL){
 		  text1 = strtok(input,">");
 		  text2 = strtok(NULL,"2>");
-		  splitcmd(text1, args,background);
-		  splitcmd(text2, args2,background);
+		  splitcmd(text1, args);
+		  splitcmd(text2, args2);
 
 		  switch (fork()){
 		 	case -1 : perror ("fork"); 
@@ -192,15 +191,15 @@ int main(void) {
 				printf("command not found \n");     
 				exit(0);        
 				break;
-			default : wait(NULL);
+			default : if(!background) wait(NULL);
 			  
 		  }
 	  } 
 	  else if(strchr(input,'>') != NULL){
 		  text1 = strtok(input,">");
 		  text2 = strtok(NULL,">");
-		  splitcmd(text1, args,background);
-		  splitcmd(text2, args2,background);
+		  splitcmd(text1, args);
+		  splitcmd(text2, args2);
 
 		  switch (fork()){
 		 	case -1 : perror ("fork"); 
@@ -220,15 +219,15 @@ int main(void) {
 				exit(0);        
 				break;
 			default : 
-				wait(NULL);
-				continue;
+				if(!background)
+					wait(NULL);
 			  
 		  }
 	  } else if(strchr(input,'<') != NULL){
 		  text1 = strtok(input,"<");
 		  text2 = strtok(NULL,"<");
-		  splitcmd(text1, args,background);
-		  splitcmd(text2, args2,background);
+		  splitcmd(text1, args);
+		  splitcmd(text2, args2);
 
 		  switch (fork()){
 		 	case -1 : perror ("fork"); 
@@ -247,21 +246,23 @@ int main(void) {
 				printf("command not found \n");
 				exit(0);
 				break;
-			default : wait(NULL);
+			default : if(!background) wait(NULL);
 		  }
 	  }
 	  else if(strchr(input,'|') != NULL){
 		  text1 = strtok(input,"|");
 		  text2 = strtok(NULL,"|");
-		  splitcmd(text1, args,background);
-		  splitcmd(text2, args2,background);
+		  splitcmd(text1, args);
+		  splitcmd(text2, args2);
 
 		  join(args,args2);
+		  if(!background)
+		  	wait(NULL);
 
 		  
 	  }
       else{
-		  splitcmd(input,args,background);
+		  splitcmd(input,args);
       
 
 	  //change directory
@@ -281,8 +282,9 @@ int main(void) {
 			execvp(args[0],args);
 		} else{
 			if(!background){
-			waitpid(pid,&status,0);
-			}
+				wait(NULL);	
+			}		
+
 		}
 	  }
 
